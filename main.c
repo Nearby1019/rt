@@ -445,7 +445,7 @@ void *rawsocket(/*void *arg*/){
         if(ret < 42){
             continue;
         }
-        len = (int)buffer[17] + (int)buffer[16] * 256;			//获取ip包长度
+        len = ret/*(int)buffer[17] + (int)buffer[16] * 256*/;			//获取ip包长度
         memset(ip, 0, sizeof(ip));
         memset(sourip, 0, sizeof(sourip));
         memcpy(ip, buffer + 14 + 12, IPLEN);   //获取数据包发送端IP 二进制形式 网络序
@@ -529,7 +529,7 @@ void *rawsocket(/*void *arg*/){
                                 perror("inet_pton");
                             }
                             slen = sizeof(sin);
-                            if((ret = sendto(lte_udp, buffer, len+14, 0, (struct sockaddr *)&sin, slen)) < 0){
+                            if((ret = sendto(lte_udp, buffer, len, 0, (struct sockaddr *)&sin, slen)) < 0){
                                 perror("lteudp sendto error");
                                 pthread_mutex_lock(&mutexrtlist);
                                 rtlist[index].net = MESH;
@@ -550,7 +550,7 @@ void *rawsocket(/*void *arg*/){
                                 perror("inet_pton");
                             }
                             slen = sizeof(sin);
-                            if((ret = sendto(mesh_udp, buffer, len+14, 0, (struct sockaddr *)&sin, slen)) < 0){
+                            if((ret = sendto(mesh_udp, buffer, len, 0, (struct sockaddr *)&sin, slen)) < 0){
                                 perror("meshudp sendto error");
 //                                pthread_mutex_lock(&mutexrtlist);
 //                                rtlist[index].status = false;
@@ -677,12 +677,12 @@ void *meshudp(/*void *arg*/) {
 
     for (;;) {
         //if(recvfrom(udp_sock, buffer, BUFFER_MAX, 0, (struct sockaddr *)&sin, &sin_size) < 0){
-        if(recvfrom(udp_sock, buffer, BUFFER_MAX, 0, NULL, NULL) < 0){
+        if((ret = recvfrom(udp_sock, buffer, BUFFER_MAX, 0, NULL, NULL)) < 0){
             perror("recvfrom");
             continue;
         }
         fgM = true;
-        len = (int)buffer[17] + (int)buffer[16] * 256;            //获取ip报文长度
+        len = ret/*(int)buffer[17] + (int)buffer[16] * 256*/;            //获取ip报文长度
         memset(ip, 0, sizeof(ip));
         memset(destip, 0, sizeof(destip));
         memcpy(ip, buffer + 14 + 12 + 4, IPLEN);    //获取目的IP 二进制 网络序
@@ -725,7 +725,7 @@ void *meshudp(/*void *arg*/) {
 //                default:printf("Unkown, please query in include/linux/in.h\n");
 //            }
             slen = sizeof(sll);
-            if((ret = sendto(raw_sock, buffer, 14+len, 0, (struct sockaddr *)&sll, slen)) < 0){
+            if((ret = sendto(raw_sock, buffer, len, 0, (struct sockaddr *)&sll, slen)) < 0){
                 perror("sendto error");
                 continue;
             } else {
@@ -743,7 +743,7 @@ void *meshudp(/*void *arg*/) {
                         perror("inet_pton");
                     }
                     slen = sizeof(sendin);
-                    if((ret = sendto(send_sock, buffer, len+14, 0, (struct sockaddr *)&sendin, slen)) < 0){
+                    if((ret = sendto(send_sock, buffer, len, 0, (struct sockaddr *)&sendin, slen)) < 0){
                         perror("lteudp sendto error");
                         pthread_mutex_lock(&mutexrtlist);
                         rtlist[index].net = MESH;
@@ -765,7 +765,7 @@ void *meshudp(/*void *arg*/) {
                         perror("inet_pton");
                     }
                     slen = sizeof(sendin);
-                    if((ret = sendto(send_sock, buffer, len+14, 0, (struct sockaddr *)&sendin, slen)) < 0){
+                    if((ret = sendto(send_sock, buffer, len, 0, (struct sockaddr *)&sendin, slen)) < 0){
                         perror("meshudp sendto error");
                     } else {
 //                        fgM = true;
@@ -879,7 +879,7 @@ void *lteudp(/*void *arg*/) {
                 continue;
             }
             fgL = true;
-            len = (int)buffer[17] + (int)buffer[16] * 256;            //获取ip报文长度
+            len = ret/*(int)buffer[17] + (int)buffer[16] * 256*/;            //获取ip报文长度
 
             memset(ip, 0, sizeof(ip));
             memset(destip, 0, sizeof(destip));
@@ -923,7 +923,7 @@ void *lteudp(/*void *arg*/) {
 //                    default:printf("Unkown, please query in include/linux/in.h\n");
 //                }
                 slen = sizeof(sll);
-                if((ret = sendto(raw_sock, buffer, 14+len, 0, (struct sockaddr *)&sll, slen)) < 0){
+                if((ret = sendto(raw_sock, buffer, len, 0, (struct sockaddr *)&sll, slen)) < 0){
                     perror("sendto error");
                     continue;
                 } else {
@@ -943,7 +943,7 @@ void *lteudp(/*void *arg*/) {
                         }
                         slen = sizeof(sendin);
 
-                        if((ret = sendto(send_sock, buffer, len+14, 0, (struct sockaddr *)&sendin, slen)) < 0){
+                        if((ret = sendto(send_sock, buffer, len, 0, (struct sockaddr *)&sendin, slen)) < 0){
                             perror("lteudp sendto error");
                             pthread_mutex_lock(&mutexrtlist);
                             rtlist[index].net = MESH;
@@ -965,7 +965,7 @@ void *lteudp(/*void *arg*/) {
                             perror("inet_pton");
                         }
                         slen = sizeof(sendin);
-                        if((ret = sendto(send_sock, buffer, len+14, 0, (struct sockaddr *)&sendin, slen)) < 0){
+                        if((ret = sendto(send_sock, buffer, len, 0, (struct sockaddr *)&sendin, slen)) < 0){
                             perror("meshudp sendto error");
                         } else {
 //                            fgM = true;
@@ -1042,6 +1042,7 @@ void *routegetlte(/*void *arg*/) {
 void *routegetmesh(/*void *arg*/) {
     int i, ret, index;
     int flag = 0;
+    struct timeval nNetTimeout;
 //    long tmp = 0;
     socklen_t len = 0;
     char ip[CHARIPLEN];
@@ -1049,6 +1050,12 @@ void *routegetmesh(/*void *arg*/) {
     struct sockaddr_in addr;																					//UDP地址结构
     addr.sin_family = AF_INET;
     addr.sin_port = htons(RTPORT);																				//路由端口
+
+    memset(&nNetTimeout, 0, sizeof(nNetTimeout));
+    nNetTimeout.tv_sec = 90; //90s
+    nNetTimeout.tv_usec = 0;
+
+
 
     for (;;) {
         if (eth_ip(ETH_MESH, ip)) {
@@ -1067,6 +1074,11 @@ void *routegetmesh(/*void *arg*/) {
         perror("socket");
         exit(-1);
     }
+
+    if ((setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (char *)&nNetTimeout, sizeof(nNetTimeout))) < 0) {     //recvfrom delay
+        perror("setsockopt");
+    }
+
     len = sizeof(addr);
     if (bind(sock, (struct sockaddr *)&addr, len) < 0) {												//绑定UDP地址结构
         perror("bind");
@@ -1082,9 +1094,22 @@ void *routegetmesh(/*void *arg*/) {
         memset(buff, 0, sizeof(buff));																				//初始化
         if ((ret = recvfrom(sock, buff, BUFFER_MAX, 0, (struct sockaddr*)&clientAddr, &len)) < 0) {					//接收消息
             perror("recvfrom");
+            flag++;
+            if (flag == 3) {
+                flag = 0;
+                for (i = 0; i < 42; i++) {
+                    if (rtlist[i].net == LTE) {
+                        if (memcmp(rtlist[i].gw, MESHIPHD, sizeof(MESHIPHD)) == 0) {
+                            pthread_mutex_lock(&mutexrtlist);
+                            rtlist[i].status = false;
+                            pthread_mutex_unlock(&mutexrtlist);
+                        }
+                    }
+                }
+            }
             continue;
         }
-
+        flag = 0;
         memset(ip, 0, sizeof(ip));
         len = sizeof(ip);
         if (inet_ntop(AF_INET, (void *)&clientAddr.sin_addr, ip, len - 1) == NULL) {
@@ -1108,17 +1133,6 @@ void *routegetmesh(/*void *arg*/) {
         }
         pthread_mutex_unlock(&mutexrtlist);
 
-        flag++;
-        if (flag == 100) {
-            flag = 0;
-            pthread_mutex_lock(&mutexrtlist);
-            for (i = 0; i < 42; i++) {
-                rtlist[i].status = false;
-                rtlist[i].net = MESH;
-            }
-            getroute(rtlist);
-            pthread_mutex_unlock(&mutexrtlist);
-        }
 
     }
     return 0;
